@@ -1,0 +1,15 @@
+# Local production-like preview: http://localhost:8080
+# Set REACT_APP_* in .env next to this file, or export before `docker compose up --build`.
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_BASE_URL: ${REACT_APP_API_BASE_URL:-http://127.0.0.1:8000}
+        REACT_APP_PAYMENT_API_URL: ${REACT_APP_PAYMENT_API_URL:-}
+        REACT_APP_SQUARE_APPLICATION_ID: ${REACT_APP_SQUARE_APPLICATION_ID:-}
+        REACT_APP_SQUARE_LOCATION_ID: ${REACT_APP_SQUARE_LOCATION_ID:-}
+    ports:
+      - "8080:80"

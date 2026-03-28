@@ -7,9 +7,13 @@ import {
   rangeHasBlockedDay,
   sameDay,
   stripTime,
+  toDateOnlyString,
 } from './bookingDateUtils';
 import sampleImage from '../../images/sampleimage.jpg';
+import SquareCheckoutModal from './SquareCheckoutModal';
 import './CrappieHouseBookingPage.css';
+
+const DAY_PASS_CENTS = 1500;
 
 function formatLong(d) {
   if (!d) return '—';
@@ -34,6 +38,7 @@ function formatRangeLine(start, end) {
 export default function CrappieHouseBookingPage() {
   const [guests, setGuests] = useState({ adults: 1, children: 0 });
   const [range, setRange] = useState({ start: null, end: null });
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   const selectedTimestamps = useMemo(() => {
     if (!range.start) return new Set();
@@ -48,6 +53,60 @@ export default function CrappieHouseBookingPage() {
   const dayCount = selectedTimestamps.size;
   const isMultiDay = dayCount > 1;
   const canContinue = range.start != null;
+
+  const totalCents = useMemo(() => {
+    const people = guests.adults + guests.children;
+    return DAY_PASS_CENTS * people * Math.max(1, dayCount);
+  }, [guests.adults, guests.children, dayCount]);
+
+  const orderNote = useMemo(() => {
+    if (!range.start) return 'Crappie House day pass';
+    let visit;
+    if (!range.end || sameDay(range.start, range.end)) {
+      visit = formatLong(range.start);
+    } else {
+      visit = `${formatRangeLine(range.start, range.end)} (${dayCount} days)`;
+    }
+    return `Crappie House · ${visit} · ${formatGuestsSummary(guests.adults, guests.children)}`;
+  }, [range.start, range.end, dayCount, guests.adults, guests.children]);
+
+  const checkoutSummary = useMemo(() => {
+    const people = guests.adults + guests.children;
+    let visitLine = '—';
+    if (range.start) {
+      visitLine =
+        !range.end || sameDay(range.start, range.end)
+          ? formatLong(range.start)
+          : formatRangeLine(range.start, range.end);
+    }
+    return {
+      visitLine,
+      guestsLine: formatGuestsSummary(guests.adults, guests.children),
+      pricingLine: `$${(DAY_PASS_CENTS / 100).toFixed(0)} × ${people} ${people === 1 ? 'person' : 'people'} × ${dayCount} ${dayCount === 1 ? 'day' : 'days'}`,
+    };
+  }, [range.start, range.end, dayCount, guests.adults, guests.children]);
+
+  /** Sent with the payment POST for your backend / Square note. */
+  const checkoutBooking = useMemo(() => {
+    if (!range.start) return null;
+    const end = range.end ?? range.start;
+    const t0 = stripTime(range.start);
+    const t1 = stripTime(end);
+    const first = t0 <= t1 ? range.start : end;
+    const last = t0 <= t1 ? end : range.start;
+    const people = guests.adults + guests.children;
+    return {
+      product: 'crappie_house_day_pass',
+      visitStart: toDateOnlyString(first),
+      visitEnd: toDateOnlyString(last),
+      dayCount,
+      adults: guests.adults,
+      children: guests.children,
+      people,
+      dayPassCents: DAY_PASS_CENTS,
+      totalCents,
+    };
+  }, [range.start, range.end, dayCount, guests.adults, guests.children, totalCents]);
 
   function handleDayClick(day) {
     setRange((prev) => {
@@ -211,15 +270,7 @@ export default function CrappieHouseBookingPage() {
                 disabled={!canContinue}
                 onClick={() => {
                   if (!canContinue || !range.start) return;
-                  let visitStr;
-                  if (!range.end || sameDay(range.start, range.end)) {
-                    visitStr = formatLong(range.start);
-                  } else {
-                    visitStr = `${formatRangeLine(range.start, range.end)} (${dayCount} days)`;
-                  }
-                  window.alert(
-                    `Checkout next step — demo only.\nVisit: ${visitStr}\nGuests: ${formatGuestsSummary(guests.adults, guests.children)}`
-                  );
+                  setCheckoutOpen(true);
                 }}
               >
                 Continue to checkout
@@ -231,6 +282,21 @@ export default function CrappieHouseBookingPage() {
           </div>
         </aside>
       </div>
+
+      <SquareCheckoutModal
+        open={checkoutOpen}
+        onClose={() => setCheckoutOpen(false)}
+        onEditBooking={() => {
+          setCheckoutOpen(false);
+          window.requestAnimationFrame(() => {
+            document.getElementById('crappie-booking')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        }}
+        amountCents={totalCents}
+        orderNote={orderNote}
+        booking={checkoutBooking}
+        summary={checkoutSummary}
+      />
     </div>
   );
 }

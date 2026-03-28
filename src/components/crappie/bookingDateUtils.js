@@ -1,4 +1,14 @@
 /** @param {Date} d */
+export function toDateOnlyString(d) {
+  if (!d) return null;
+  const x = new Date(d);
+  const y = x.getFullYear();
+  const m = String(x.getMonth() + 1).padStart(2, '0');
+  const day = String(x.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** @param {Date} d */
 export function stripTime(d) {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);

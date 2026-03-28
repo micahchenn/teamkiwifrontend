@@ -1,0 +1,10 @@
+node_modules
+build
+coverage
+.git
+.gitignore
+*.md
+.env
+.env.*
+!.env.example
+README.md
