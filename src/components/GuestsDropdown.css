@@ -1,0 +1,223 @@
+/* Reusable guests dropdown — trigger + popover with steppers + Apply */
+
+.guests-dd {
+  --gd-text: #000000;
+  --gd-border: #000000;
+  --gd-trigger-bg: #ffffff;
+  --gd-blue: #3498db;
+  --gd-blue-muted: rgba(52, 152, 219, 0.35);
+  /* Rest = darker; hover = lighter; active = pressed darker */
+  --gd-red: #9e3434;
+  --gd-red-hover: #c94f49;
+  --gd-red-active: #7a2929;
+  --gd-grey-line: #e0e0e0;
+  --gd-footer-bg: #ffffff;
+  --gd-shadow: 0 0.35rem 1rem rgba(0, 0, 0, 0.12);
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+  font-family: inherit;
+}
+
+.guests-dd__label {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gd-text);
+}
+
+.guests-dd__wrap {
+  position: relative;
+  width: 100%;
+}
+
+.guests-dd__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--gd-text);
+  text-align: left;
+  background: var(--gd-trigger-bg);
+  border: 2px solid var(--gd-border);
+  border-radius: 0.3rem;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease;
+}
+
+.guests-dd__trigger:hover:not(:disabled),
+.guests-dd__trigger:focus-visible:not(:disabled) {
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.25);
+  outline: none;
+}
+
+.guests-dd__trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.guests-dd__trigger-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.guests-dd__chevron {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--gd-text);
+  transition: transform 0.15s ease;
+}
+
+.guests-dd__trigger--open .guests-dd__chevron {
+  transform: rotate(180deg);
+}
+
+.guests-dd__panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  z-index: 40;
+  background: #fff;
+  border-radius: 0.25rem;
+  box-shadow: var(--gd-shadow);
+  overflow: hidden;
+  animation: guests-dd-in 0.12s ease-out;
+}
+
+@keyframes guests-dd-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.guests-dd__rows {
+  padding: 0.85rem 0.9rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.guests-dd__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.guests-dd__row-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--gd-text);
+}
+
+.guests-dd__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.guests-dd__step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  margin: 0;
+  padding: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--gd-blue);
+  background: #fff;
+  border: 2px solid var(--gd-blue);
+  border-radius: 50%;
+  cursor: pointer;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease;
+}
+
+.guests-dd__step:hover:not(:disabled),
+.guests-dd__step:focus-visible:not(:disabled) {
+  background: rgba(52, 152, 219, 0.08);
+  outline: none;
+}
+
+.guests-dd__step:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: var(--gd-blue-muted);
+  color: var(--gd-blue-muted);
+}
+
+.guests-dd__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 1.75rem;
+  padding: 0 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--gd-text);
+  background: #fff;
+  border: 1px solid var(--gd-grey-line);
+  border-radius: 0.2rem;
+}
+
+.guests-dd__footer {
+  padding: 0.65rem 0.75rem;
+  background: var(--gd-footer-bg);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.guests-dd__apply {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.6rem 0.85rem;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--gd-red);
+  border: none;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    transform 0.08s ease,
+    box-shadow 0.08s ease;
+}
+
+.guests-dd__apply:hover,
+.guests-dd__apply:focus-visible {
+  background: var(--gd-red-hover);
+  outline: none;
+}
+
+.guests-dd__apply:active {
+  background: var(--gd-red-active);
+  transform: translateY(1px);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12);
+}

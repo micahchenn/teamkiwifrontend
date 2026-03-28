@@ -1,0 +1,43 @@
+/** @param {Date} d */
+export function stripTime(d) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x.getTime();
+}
+
+export function sameDay(a, b) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+/** Inclusive range; assumes start <= end on calendar days */
+export function eachDayInRange(start, end) {
+  const out = [];
+  const d = new Date(start);
+  d.setHours(0, 0, 0, 0);
+  const last = new Date(end);
+  last.setHours(0, 0, 0, 0);
+  while (d <= last) {
+    out.push(new Date(d));
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
+}
+
+/** @param {(date: Date) => boolean} isUnavailable */
+export function rangeHasBlockedDay(start, end, isUnavailable) {
+  return eachDayInRange(start, end).some((day) => isUnavailable(day));
+}
+
+/** Demo “no vacancy” pattern — replace with API later */
+export function isDayUnavailableDemo(date) {
+  const t = stripTime(date);
+  const today = stripTime(new Date());
+  if (t < today) return true;
+  const d = date.getDate();
+  if (d === 7 || d === 14 || d === 21) return true;
+  return false;
+}
