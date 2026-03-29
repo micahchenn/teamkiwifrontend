@@ -1,5 +1,6 @@
 [build]
-  command = "npm run build"
+  # Install locked deps, then CRA production bundle → publish/
+  command = "npm ci && npm run build"
   publish = "build"
 
 # Single Page App: all routes → index.html

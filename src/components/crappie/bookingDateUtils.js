@@ -42,12 +42,9 @@ export function rangeHasBlockedDay(start, end, isUnavailable) {
   return eachDayInRange(start, end).some((day) => isUnavailable(day));
 }
 
-/** Demo “no vacancy” pattern — replace with API later */
+/** Past dates unavailable; replace with real availability from your API when ready. */
 export function isDayUnavailableDemo(date) {
   const t = stripTime(date);
   const today = stripTime(new Date());
-  if (t < today) return true;
-  const d = date.getDate();
-  if (d === 7 || d === 14 || d === 21) return true;
-  return false;
+  return t < today;
 }

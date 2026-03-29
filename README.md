@@ -76,7 +76,7 @@ npm run preview
 
 Build in CI or locally, upload `build/`. Configure SPA fallback to `index.html`.
 
-- **Netlify** — `netlify.toml`
+- **Netlify** — `netlify.toml` (build + SPA redirect). In **Site settings → Environment variables**, set `REACT_APP_API_BASE_URL`, `REACT_APP_SQUARE_APPLICATION_ID`, etc. Netlify runs `npm ci && npm run build` from the repo root; publish directory is `build`. Redeploy after changing any `REACT_APP_*` value.
 - **Vercel** — `vercel.json`
 - **Render** — static site + separate backend service; set `REACT_APP_*` at build time
 
