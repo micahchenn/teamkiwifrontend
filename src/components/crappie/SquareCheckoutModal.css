@@ -388,6 +388,27 @@
   gap: 0.5rem;
 }
 
+.sq-checkout__fields--phone {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sq-line);
+}
+
+.sq-checkout__guest-block {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sq-line);
+}
+
+.sq-checkout__guest-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sq-muted);
+}
+
 .sq-checkout__label {
   font-size: 0.7rem;
   font-weight: 700;

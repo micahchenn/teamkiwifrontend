@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useState } from 'react';
 import { CreditCard, PaymentForm } from 'react-square-web-payments-sdk';
 import './SquareCheckoutModal.css';
 
@@ -17,6 +17,7 @@ function moneyFromCents(cents) {
  * @param {object} props
  * @param {{ visitLine: string, guestsLine: string, pricingLine: string }} props.summary
  * @param {object | null} [props.booking] Visit dates, guest counts, totals (for your backend)
+ * @param {number} props.partyCount Number of day-pass holders (adults + children); one name/email each.
  */
 export default function SquareCheckoutModal({
   open,
@@ -24,14 +25,15 @@ export default function SquareCheckoutModal({
   amountCents,
   orderNote,
   booking,
+  partyCount = 1,
   summary,
   onSuccess,
   onEditBooking,
 }) {
   const baseId = useId();
   const [step, setStep] = useState(1);
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
+  /** One entry per pass holder — backend issues one code per row. */
+  const [guestRows, setGuestRows] = useState([]);
   const [phone, setPhone] = useState('');
   const [contactError, setContactError] = useState(null);
 
@@ -61,11 +63,16 @@ export default function SquareCheckoutModal({
     };
   }, [open]);
 
+  useLayoutEffect(() => {
+    if (!open) return;
+    const n = Math.max(1, partyCount || 1);
+    setGuestRows(Array.from({ length: n }, () => ({ fullName: '', email: '' })));
+  }, [open, partyCount]);
+
   useEffect(() => {
     if (!open) {
       setStep(1);
-      setFullName('');
-      setEmail('');
+      setGuestRows([]);
       setPhone('');
       setContactError(null);
       setConfig(null);
@@ -91,21 +98,31 @@ export default function SquareCheckoutModal({
     return () => {
       cancelled = true;
     };
-  }, [open]);
+  }, [open, partyCount]);
 
   function validateContact() {
-    const name = fullName.trim();
-    const em = email.trim();
-    if (name.length < 2) {
-      setContactError('Please enter your full name.');
-      return false;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
-      setContactError('Please enter a valid email address.');
-      return false;
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    for (let i = 0; i < guestRows.length; i++) {
+      const name = guestRows[i].fullName.trim();
+      const em = guestRows[i].email.trim();
+      if (name.length < 2) {
+        setContactError(`Please enter full name for guest ${i + 1}.`);
+        return false;
+      }
+      if (!emailRe.test(em)) {
+        setContactError(`Please enter a valid email for guest ${i + 1}.`);
+        return false;
+      }
     }
     setContactError(null);
     return true;
+  }
+
+  function setGuestField(index, field, value) {
+    setGuestRows((rows) => {
+      const next = rows.map((r, j) => (j === index ? { ...r, [field]: value } : r));
+      return next;
+    });
   }
 
   const cardTokenizeResponseReceived = useCallback(
@@ -127,6 +144,27 @@ export default function SquareCheckoutModal({
 
       setPaying(true);
       try {
+        const guestsPayload = guestRows.map((g) => ({
+          fullName: g.fullName.trim(),
+          email: g.email.trim(),
+        }));
+        const primary = guestsPayload[0];
+        /** Backend / SendGrid: `children` must be present (0+). If omitted or 0, kid disclaimer is hidden. */
+        const bookingPayload =
+          booking != null
+            ? {
+                ...booking,
+                guests: guestsPayload,
+                adults: Number(booking.adults ?? 0),
+                children: Number(booking.children ?? 0),
+              }
+            : {
+                guests: guestsPayload,
+                adults: guestsPayload.length,
+                children: 0,
+                people: guestsPayload.length,
+              };
+
         const res = await fetch(`${paymentApiBase}/api/square/payments`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -136,10 +174,11 @@ export default function SquareCheckoutModal({
             currency: 'USD',
             note: orderNote,
             referenceId: bookingReference,
-            customerName: fullName.trim(),
-            customerEmail: email.trim(),
+            guests: guestsPayload,
+            customerName: primary.fullName,
+            customerEmail: primary.email,
             customerPhone: phone.trim() || undefined,
-            ...(booking && { booking }),
+            booking: bookingPayload,
           }),
         });
         const data = await res.json();
@@ -149,11 +188,10 @@ export default function SquareCheckoutModal({
           bookingReference: data.referenceId || bookingReference,
         });
         onSuccess?.(data, {
-          fullName: fullName.trim(),
-          email: email.trim(),
+          guests: guestsPayload,
           phone: phone.trim() || null,
           bookingReference,
-          booking: booking || null,
+          booking: bookingPayload,
         });
       } catch (e) {
         setPayError(e.message || 'Payment failed');
@@ -161,7 +199,7 @@ export default function SquareCheckoutModal({
         setPaying(false);
       }
     },
-    [amountCents, orderNote, onSuccess, bookingReference, fullName, email, phone, booking]
+    [amountCents, orderNote, onSuccess, bookingReference, guestRows, phone, booking]
   );
 
   if (!open) return null;
@@ -237,8 +275,17 @@ export default function SquareCheckoutModal({
               <div className="sq-checkout__success">
                 <p className="sq-checkout__success-title">You&apos;re all set</p>
                 <p className="sq-checkout__success-lead">
-                  Thank you, <strong>{fullName.trim()}</strong>. We&apos;ll send a confirmation to{' '}
-                  <strong>{email.trim()}</strong> with your visit details and pass information.
+                  {guestRows.length <= 1 ? (
+                    <>
+                      Thank you, <strong>{guestRows[0]?.fullName.trim()}</strong>. We&apos;ll send a confirmation to{' '}
+                      <strong>{guestRows[0]?.email.trim()}</strong> with visit details and pass information.
+                    </>
+                  ) : (
+                    <>
+                      Thank you for your booking. We&apos;ll email each guest at the address you provided with visit
+                      details and pass information.
+                    </>
+                  )}
                 </p>
                 <p className="sq-checkout__success-detail">
                   Save the reference below for your records — you may be asked for it at check-in.
@@ -268,38 +315,54 @@ export default function SquareCheckoutModal({
             {!done && step === 1 && (
               <section className="sq-checkout__card" aria-labelledby={`${baseId}-step1`}>
                 <h3 id={`${baseId}-step1`} className="sq-checkout__section-title">
-                  Step 1 — Contact
+                  Step 1 — Guest details
                 </h3>
                 <p className="sq-checkout__section-hint">
-                  Your name and email are used for passes and confirmation only.
+                  Each pass holder needs a name and email so we can send a unique pass code. One contact phone for the
+                  group is optional.
                 </p>
-                <div className="sq-checkout__fields">
-                  <label className="sq-checkout__label" htmlFor={`${baseId}-name`}>
-                    Full name <span className="sq-checkout__req">*</span>
-                  </label>
-                  <input
-                    id={`${baseId}-name`}
-                    className="sq-checkout__input"
-                    type="text"
-                    name="name"
-                    autoComplete="name"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Jane Doe"
-                  />
-                  <label className="sq-checkout__label" htmlFor={`${baseId}-email`}>
-                    Email <span className="sq-checkout__req">*</span>
-                  </label>
-                  <input
-                    id={`${baseId}-email`}
-                    className="sq-checkout__input"
-                    type="email"
-                    name="email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                  />
+                {guestRows.map((row, index) => (
+                  <div
+                    key={index}
+                    className={index > 0 ? 'sq-checkout__guest-block' : undefined}
+                    data-guest-index={index + 1}
+                  >
+                    <p className="sq-checkout__guest-label" id={`${baseId}-guest-${index}-title`}>
+                      Guest {index + 1} of {guestRows.length}
+                    </p>
+                    <div className="sq-checkout__fields">
+                      <label className="sq-checkout__label" htmlFor={`${baseId}-name-${index}`}>
+                        Full name <span className="sq-checkout__req">*</span>
+                      </label>
+                      <input
+                        id={`${baseId}-name-${index}`}
+                        className="sq-checkout__input"
+                        type="text"
+                        name={`name-${index}`}
+                        autoComplete="name"
+                        value={row.fullName}
+                        onChange={(e) => setGuestField(index, 'fullName', e.target.value)}
+                        placeholder="Jane Doe"
+                        aria-labelledby={`${baseId}-guest-${index}-title`}
+                      />
+                      <label className="sq-checkout__label" htmlFor={`${baseId}-email-${index}`}>
+                        Email <span className="sq-checkout__req">*</span>
+                      </label>
+                      <input
+                        id={`${baseId}-email-${index}`}
+                        className="sq-checkout__input"
+                        type="email"
+                        name={`email-${index}`}
+                        autoComplete="email"
+                        value={row.email}
+                        onChange={(e) => setGuestField(index, 'email', e.target.value)}
+                        placeholder="you@example.com"
+                        aria-labelledby={`${baseId}-guest-${index}-title`}
+                      />
+                    </div>
+                  </div>
+                ))}
+                <div className="sq-checkout__fields sq-checkout__fields--phone">
                   <label className="sq-checkout__label" htmlFor={`${baseId}-phone`}>
                     Phone <span className="sq-checkout__opt">(optional)</span>
                   </label>

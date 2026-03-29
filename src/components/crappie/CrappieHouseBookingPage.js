@@ -295,6 +295,7 @@ export default function CrappieHouseBookingPage() {
         amountCents={totalCents}
         orderNote={orderNote}
         booking={checkoutBooking}
+        partyCount={guests.adults + guests.children}
         summary={checkoutSummary}
       />
     </div>

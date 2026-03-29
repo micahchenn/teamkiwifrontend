@@ -40,7 +40,7 @@ The backend must allow **CORS** from `http://localhost:3000` (and your productio
 - **Name & email** — For confirmations, passes, and your database. The checkout UI collects these before the card step.
 - **Phone** — Optional; useful for day-of contact.
 - **Card data** — Entered only in Square’s secure fields (Web Payments SDK). You do **not** type full card numbers into your own inputs (PCI). A **billing street address** is usually *not* required for a simple charge; Square may still ask for **postal code** in the card form for verification.
-- **After payment** — Your backend returns a **`paymentId`** (and status). Store it with the booking; use Square’s **GetPayment** or webhooks to reconcile. The app also sends a **`referenceId`** (UUID) and structured **`booking`** for your database.
+- **After payment** — Your backend returns a **`paymentId`** (and status). Store it with the booking; use Square’s **GetPayment** or webhooks to reconcile. The app sends a **`referenceId`** (UUID), structured **`booking`** (including **`adults`**, **`children`** as integers, visit dates, totals, and **`guests`**), and a top-level **`guests`** array so you can issue **one code per person** and drive SendGrid / email. See `docs/backend-crappie-guests.md`.
 
 ## Environment variables
 
