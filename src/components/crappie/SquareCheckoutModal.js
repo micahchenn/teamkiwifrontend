@@ -17,7 +17,8 @@ function moneyFromCents(cents) {
  * @param {object} props
  * @param {{ visitLine: string, guestsLine: string, pricingLine: string }} props.summary
  * @param {object | null} [props.booking] Visit dates, guest counts, totals (for your backend)
- * @param {number} props.partyCount Number of day-pass holders (adults + children); one name/email each.
+ * @param {number} props.adultsCount Paying adults — one name/email row each (children share adult passes).
+ * @param {number} props.childrenCount Children in party (pricing only; no separate contact form).
  */
 export default function SquareCheckoutModal({
   open,
@@ -25,14 +26,15 @@ export default function SquareCheckoutModal({
   amountCents,
   orderNote,
   booking,
-  partyCount = 1,
+  adultsCount = 1,
+  childrenCount = 0,
   summary,
   onSuccess,
   onEditBooking,
 }) {
   const baseId = useId();
   const [step, setStep] = useState(1);
-  /** One entry per pass holder — backend issues one code per row. */
+  /** One entry per adult — passes/codes for children are covered with adult passes. */
   const [guestRows, setGuestRows] = useState([]);
   const [phone, setPhone] = useState('');
   const [contactError, setContactError] = useState(null);
@@ -65,9 +67,9 @@ export default function SquareCheckoutModal({
 
   useLayoutEffect(() => {
     if (!open) return;
-    const n = Math.max(1, partyCount || 1);
+    const n = Math.max(1, adultsCount || 1);
     setGuestRows(Array.from({ length: n }, () => ({ fullName: '', email: '' })));
-  }, [open, partyCount]);
+  }, [open, adultsCount]);
 
   useEffect(() => {
     if (!open) {
@@ -98,7 +100,7 @@ export default function SquareCheckoutModal({
     return () => {
       cancelled = true;
     };
-  }, [open, partyCount]);
+  }, [open]);
 
   function validateContact() {
     const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -106,11 +108,11 @@ export default function SquareCheckoutModal({
       const name = guestRows[i].fullName.trim();
       const em = guestRows[i].email.trim();
       if (name.length < 2) {
-        setContactError(`Please enter full name for guest ${i + 1}.`);
+        setContactError(`Please enter full name for adult ${i + 1}.`);
         return false;
       }
       if (!emailRe.test(em)) {
-        setContactError(`Please enter a valid email for guest ${i + 1}.`);
+        setContactError(`Please enter a valid email for adult ${i + 1}.`);
         return false;
       }
     }
@@ -161,8 +163,8 @@ export default function SquareCheckoutModal({
             : {
                 guests: guestsPayload,
                 adults: guestsPayload.length,
-                children: 0,
-                people: guestsPayload.length,
+                children: Number(childrenCount ?? 0),
+                people: guestsPayload.length + Number(childrenCount ?? 0),
               };
 
         const res = await fetch(`${paymentApiBase}/api/square/payments`, {
@@ -199,7 +201,7 @@ export default function SquareCheckoutModal({
         setPaying(false);
       }
     },
-    [amountCents, orderNote, onSuccess, bookingReference, guestRows, phone, booking]
+    [amountCents, orderNote, onSuccess, bookingReference, guestRows, phone, booking, childrenCount]
   );
 
   if (!open) return null;
@@ -282,11 +284,17 @@ export default function SquareCheckoutModal({
                     </>
                   ) : (
                     <>
-                      Thank you for your booking. We&apos;ll email each guest at the address you provided with visit
+                      Thank you for your booking. We&apos;ll email each adult at the address you provided with visit
                       details and pass information.
                     </>
                   )}
                 </p>
+                {childrenCount > 0 && (
+                  <p className="sq-checkout__success-children">
+                    Children in your party are included on the same rate and must stay with a paying adult at the
+                    Crappie House. Pass details for kids follow the adult confirmation.
+                  </p>
+                )}
                 <p className="sq-checkout__success-detail">
                   Save the reference below for your records — you may be asked for it at check-in.
                 </p>
@@ -315,12 +323,22 @@ export default function SquareCheckoutModal({
             {!done && step === 1 && (
               <section className="sq-checkout__card" aria-labelledby={`${baseId}-step1`}>
                 <h3 id={`${baseId}-step1`} className="sq-checkout__section-title">
-                  Step 1 — Guest details
+                  Step 1 — Adult guests
                 </h3>
                 <p className="sq-checkout__section-hint">
-                  Each pass holder needs a name and email so we can send a unique pass code. One contact phone for the
-                  group is optional.
+                  We collect name and email for each <strong>adult</strong> so we can send pass confirmations. One
+                  contact phone for your group is optional.
                 </p>
+                {childrenCount > 0 && (
+                  <div className="sq-checkout__children-callout" role="note">
+                    <p className="sq-checkout__children-callout-title">Children in your party</p>
+                    <p className="sq-checkout__children-callout-text">
+                      Child day passes are also <strong>$15 per person per day</strong> (same as adults). We do{' '}
+                      <strong>not</strong> collect separate contact info for children — their access is covered with your
+                      adult passes. <strong>Children must be with a paying adult</strong> at the Crappie House.
+                    </p>
+                  </div>
+                )}
                 {guestRows.map((row, index) => (
                   <div
                     key={index}
@@ -328,7 +346,7 @@ export default function SquareCheckoutModal({
                     data-guest-index={index + 1}
                   >
                     <p className="sq-checkout__guest-label" id={`${baseId}-guest-${index}-title`}>
-                      Guest {index + 1} of {guestRows.length}
+                      Adult {index + 1} of {guestRows.length}
                     </p>
                     <div className="sq-checkout__fields">
                       <label className="sq-checkout__label" htmlFor={`${baseId}-name-${index}`}>

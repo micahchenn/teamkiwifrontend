@@ -219,6 +219,13 @@ export default function CrappieHouseBookingPage() {
                 label="Guests"
               />
 
+              {guests.children > 0 && (
+                <p className="ch-children-note" role="note">
+                  Children are <strong>$15 per person per day</strong> (same as adults). Children must stay with a paying
+                  adult at the Crappie House. At checkout we only collect name and email for adults.
+                </p>
+              )}
+
               <div className="ch-field ch-field--row">
                 <div className="ch-field__head">
                   <span className="ch-field__label">Dates</span>
@@ -295,7 +302,8 @@ export default function CrappieHouseBookingPage() {
         amountCents={totalCents}
         orderNote={orderNote}
         booking={checkoutBooking}
-        partyCount={guests.adults + guests.children}
+        adultsCount={guests.adults}
+        childrenCount={guests.children}
         summary={checkoutSummary}
       />
     </div>
