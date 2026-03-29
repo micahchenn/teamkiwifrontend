@@ -35,6 +35,7 @@ Embedded in **`booking`** (same `guests` array duplicated for convenience):
     "people": 3,
     "dayPassCents": 1500,
     "totalCents": 9000,
+    "guestEmails": ["john@example.com"],
     "guests": [
       { "fullName": "Jane Doe", "email": "jane@example.com", "phone": "+13255550100" },
       { "fullName": "John Doe", "email": "john@example.com" }
@@ -46,6 +47,10 @@ Embedded in **`booking`** (same `guests` array duplicated for convenience):
 **`adults` and `children` (integers):** Always included on `booking` after payment (normalized on the client). Email / SendGrid templates use these for copy and disclaimers — e.g. **`children` must be present** (`0` if none). If `children` is omitted or `0`, kid-related disclaimer blocks stay off; use **`children: 1`** (or more) when the party includes children so templates can show the disclaimer. Pass the full `booking` dict (including `guests`) into `build_booking_dynamic_template_data` / `send_booking_confirmation_email` on the backend.
 
 **SendGrid:** After you change templates, **re-upload `email.html`** into the SendGrid dynamic template (or paste the updated HTML). Use **`children: 1`** (and codes) in `send_template_test_email` so test sends show the disclaimer.
+
+**`booking.guestEmails` (optional array of strings):** Extra addresses that should receive the same confirmation as the payer (in addition to top-level **`customerEmail`**, which is adult 1). The frontend sends **`guestEmails`** as the emails of adults 2, 3, … **excluding** the payer’s address and **deduped** case-insensitively. Your backend may also accept **`guest_emails`** or a comma/semicolon-separated string — see your API serializer.
+
+**Why:** Square and the top-level payload only expose **`customerEmail`** for the paying contact. Without **`guestEmails`**, only one inbox would get the message even when multiple adults each have an email in **`booking.guests`**.
 
 **Validation:** `len(booking.guests) === booking.adults`, `booking.people === booking.adults + booking.children`, and `booking.totalCents` matches `amountCents`.
 

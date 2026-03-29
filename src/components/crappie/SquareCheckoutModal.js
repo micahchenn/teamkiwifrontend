@@ -14,6 +14,26 @@ function moneyFromCents(cents) {
 }
 
 /**
+ * Extra confirmation recipients: other adults’ emails (not the payer). Backend merges with customerEmail.
+ * Dedupes case-insensitively vs payer and within the list.
+ */
+function buildGuestEmailsForBooking(guestRows) {
+  if (!Array.isArray(guestRows) || guestRows.length < 2) return [];
+  const primary = (guestRows[0]?.email ?? '').trim().toLowerCase();
+  const seen = new Set(primary ? [primary] : []);
+  const out = [];
+  for (let i = 1; i < guestRows.length; i++) {
+    const em = (guestRows[i]?.email ?? '').trim();
+    if (!em) continue;
+    const low = em.toLowerCase();
+    if (seen.has(low)) continue;
+    seen.add(low);
+    out.push(em);
+  }
+  return out;
+}
+
+/**
  * @param {object} props
  * @param {{ visitLine: string, guestsLine: string, pricingLine: string }} props.summary
  * @param {object | null} [props.booking] Visit dates, guest counts, totals (for your backend)
@@ -155,6 +175,7 @@ export default function SquareCheckoutModal({
         });
         const primary = guestsPayload[0];
         const primaryPhone = guestRows[0]?.phone != null ? String(guestRows[0].phone).trim() : '';
+        const guestEmailsExtra = buildGuestEmailsForBooking(guestRows);
         /** Backend / SendGrid: `children` must be present (0+). If omitted or 0, kid disclaimer is hidden. */
         const bookingPayload =
           booking != null
@@ -163,12 +184,14 @@ export default function SquareCheckoutModal({
                 guests: guestsPayload,
                 adults: Number(booking.adults ?? 0),
                 children: Number(booking.children ?? 0),
+                ...(guestEmailsExtra.length > 0 ? { guestEmails: guestEmailsExtra } : {}),
               }
             : {
                 guests: guestsPayload,
                 adults: guestsPayload.length,
                 children: Number(childrenCount ?? 0),
                 people: guestsPayload.length + Number(childrenCount ?? 0),
+                ...(guestEmailsExtra.length > 0 ? { guestEmails: guestEmailsExtra } : {}),
               };
 
         const res = await fetch(`${paymentApiBase}/api/square/payments`, {
@@ -330,8 +353,9 @@ export default function SquareCheckoutModal({
                   Step 1 — Adult guests
                 </h3>
                 <p className="sq-checkout__section-hint">
-                  We collect name and email for each <strong>adult</strong> so we can send pass confirmations. Phone is
-                  optional — add one for the paying guest (adult 1) or for any adult.
+                  We collect name and email for each <strong>adult</strong>. Confirmation and door-code emails go to
+                  the payer (adult 1) plus any other adults with a <strong>different</strong> email. Phone is optional
+                  for each adult.
                 </p>
                 {childrenCount > 0 && (
                   <div className="sq-checkout__children-callout" role="note">
