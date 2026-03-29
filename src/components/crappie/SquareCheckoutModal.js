@@ -36,7 +36,6 @@ export default function SquareCheckoutModal({
   const [step, setStep] = useState(1);
   /** One entry per adult — passes/codes for children are covered with adult passes. */
   const [guestRows, setGuestRows] = useState([]);
-  const [phone, setPhone] = useState('');
   const [contactError, setContactError] = useState(null);
 
   const [bookingReference, setBookingReference] = useState('');
@@ -68,14 +67,13 @@ export default function SquareCheckoutModal({
   useLayoutEffect(() => {
     if (!open) return;
     const n = Math.max(1, adultsCount || 1);
-    setGuestRows(Array.from({ length: n }, () => ({ fullName: '', email: '' })));
+    setGuestRows(Array.from({ length: n }, () => ({ fullName: '', email: '', phone: '' })));
   }, [open, adultsCount]);
 
   useEffect(() => {
     if (!open) {
       setStep(1);
       setGuestRows([]);
-      setPhone('');
       setContactError(null);
       setConfig(null);
       setConfigError(null);
@@ -146,11 +144,17 @@ export default function SquareCheckoutModal({
 
       setPaying(true);
       try {
-        const guestsPayload = guestRows.map((g) => ({
-          fullName: g.fullName.trim(),
-          email: g.email.trim(),
-        }));
+        const guestsPayload = guestRows.map((g) => {
+          const row = {
+            fullName: g.fullName.trim(),
+            email: g.email.trim(),
+          };
+          const tel = g.phone != null ? String(g.phone).trim() : '';
+          if (tel) row.phone = tel;
+          return row;
+        });
         const primary = guestsPayload[0];
+        const primaryPhone = guestRows[0]?.phone != null ? String(guestRows[0].phone).trim() : '';
         /** Backend / SendGrid: `children` must be present (0+). If omitted or 0, kid disclaimer is hidden. */
         const bookingPayload =
           booking != null
@@ -179,7 +183,7 @@ export default function SquareCheckoutModal({
             guests: guestsPayload,
             customerName: primary.fullName,
             customerEmail: primary.email,
-            customerPhone: phone.trim() || undefined,
+            customerPhone: primaryPhone || undefined,
             booking: bookingPayload,
           }),
         });
@@ -191,7 +195,7 @@ export default function SquareCheckoutModal({
         });
         onSuccess?.(data, {
           guests: guestsPayload,
-          phone: phone.trim() || null,
+          phone: primaryPhone || null,
           bookingReference,
           booking: bookingPayload,
         });
@@ -201,7 +205,7 @@ export default function SquareCheckoutModal({
         setPaying(false);
       }
     },
-    [amountCents, orderNote, onSuccess, bookingReference, guestRows, phone, booking, childrenCount]
+    [amountCents, orderNote, onSuccess, bookingReference, guestRows, booking, childrenCount]
   );
 
   if (!open) return null;
@@ -326,8 +330,8 @@ export default function SquareCheckoutModal({
                   Step 1 — Adult guests
                 </h3>
                 <p className="sq-checkout__section-hint">
-                  We collect name and email for each <strong>adult</strong> so we can send pass confirmations. One
-                  contact phone for your group is optional.
+                  We collect name and email for each <strong>adult</strong> so we can send pass confirmations. Phone is
+                  optional — add one for the paying guest (adult 1) or for any adult.
                 </p>
                 {childrenCount > 0 && (
                   <div className="sq-checkout__children-callout" role="note">
@@ -346,7 +350,7 @@ export default function SquareCheckoutModal({
                     data-guest-index={index + 1}
                   >
                     <p className="sq-checkout__guest-label" id={`${baseId}-guest-${index}-title`}>
-                      Adult {index + 1} of {guestRows.length}
+                      {index === 0 ? 'Adult 1 — primary contact' : `Adult ${index + 1} of ${guestRows.length}`}
                     </p>
                     <div className="sq-checkout__fields">
                       <label className="sq-checkout__label" htmlFor={`${baseId}-name-${index}`}>
@@ -357,7 +361,7 @@ export default function SquareCheckoutModal({
                         className="sq-checkout__input"
                         type="text"
                         name={`name-${index}`}
-                        autoComplete="name"
+                        autoComplete={index === 0 ? 'name' : 'off'}
                         value={row.fullName}
                         onChange={(e) => setGuestField(index, 'fullName', e.target.value)}
                         placeholder="Jane Doe"
@@ -377,24 +381,23 @@ export default function SquareCheckoutModal({
                         placeholder="you@example.com"
                         aria-labelledby={`${baseId}-guest-${index}-title`}
                       />
+                      <label className="sq-checkout__label" htmlFor={`${baseId}-phone-${index}`}>
+                        Phone <span className="sq-checkout__opt">(optional)</span>
+                      </label>
+                      <input
+                        id={`${baseId}-phone-${index}`}
+                        className="sq-checkout__input"
+                        type="tel"
+                        name={`phone-${index}`}
+                        autoComplete="tel"
+                        value={row.phone ?? ''}
+                        onChange={(e) => setGuestField(index, 'phone', e.target.value)}
+                        placeholder="(555) 555-0100"
+                        aria-labelledby={`${baseId}-guest-${index}-title`}
+                      />
                     </div>
                   </div>
                 ))}
-                <div className="sq-checkout__fields sq-checkout__fields--phone">
-                  <label className="sq-checkout__label" htmlFor={`${baseId}-phone`}>
-                    Phone <span className="sq-checkout__opt">(optional)</span>
-                  </label>
-                  <input
-                    id={`${baseId}-phone`}
-                    className="sq-checkout__input"
-                    type="tel"
-                    name="phone"
-                    autoComplete="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="(555) 555-0100"
-                  />
-                </div>
                 {contactError && <p className="sq-checkout__err">{contactError}</p>}
                 <button
                   type="button"

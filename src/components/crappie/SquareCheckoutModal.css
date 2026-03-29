@@ -420,12 +420,6 @@
   gap: 0.5rem;
 }
 
-.sq-checkout__fields--phone {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--sq-line);
-}
-
 .sq-checkout__guest-block {
   margin-top: 1rem;
   padding-top: 1rem;

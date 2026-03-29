@@ -9,7 +9,7 @@ Top-level (along with `sourceId`, `amountCents`, `currency`, `note`, `referenceI
 ```json
 {
   "guests": [
-    { "fullName": "Jane Doe", "email": "jane@example.com" },
+    { "fullName": "Jane Doe", "email": "jane@example.com", "phone": "+13255550100" },
     { "fullName": "John Doe", "email": "john@example.com" }
   ],
   "customerName": "Jane Doe",
@@ -18,7 +18,7 @@ Top-level (along with `sourceId`, `amountCents`, `currency`, `note`, `referenceI
 }
 ```
 
-- **`guests`** — One entry per **adult** (same order as checkout: adult 1, adult 2, …). Length equals **`booking.adults`**.
+- **`guests`** — One entry per **adult** (same order as checkout: adult 1, adult 2, …). Length equals **`booking.adults`**. Each object may include optional **`phone`** (per adult). Top-level **`customerPhone`** is adult 1’s phone when provided (for Square receipts).
 - **`customerName` / `customerEmail`** — Copy of **guest 1** (payer / primary) for Square receipts and backward compatibility.
 
 Embedded in **`booking`** (same `guests` array duplicated for convenience):
@@ -36,7 +36,7 @@ Embedded in **`booking`** (same `guests` array duplicated for convenience):
     "dayPassCents": 1500,
     "totalCents": 9000,
     "guests": [
-      { "fullName": "Jane Doe", "email": "jane@example.com" },
+      { "fullName": "Jane Doe", "email": "jane@example.com", "phone": "+13255550100" },
       { "fullName": "John Doe", "email": "john@example.com" }
     ]
   }
