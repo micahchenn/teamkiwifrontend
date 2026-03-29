@@ -605,13 +605,6 @@ code.sq-checkout__id-value {
   font-size: 0.75rem;
 }
 
-.sq-checkout__sandbox-note {
-  margin: 0 0 1.1rem;
-  font-size: 0.75rem;
-  color: var(--sq-muted);
-  line-height: 1.45;
-}
-
 .sq-checkout__legal {
   margin-top: 0;
   padding-top: 1rem;

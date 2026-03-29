@@ -235,34 +235,30 @@ export default function SquareCheckoutModal({
 
             {done && (
               <div className="sq-checkout__success">
-                <p className="sq-checkout__success-title">Payment confirmed</p>
+                <p className="sq-checkout__success-title">You&apos;re all set</p>
                 <p className="sq-checkout__success-lead">
-                  Thank you, <strong>{fullName.trim()}</strong>. A confirmation will be sent to{' '}
-                  <strong>{email.trim()}</strong> when your backend is connected.
+                  Thank you, <strong>{fullName.trim()}</strong>. We&apos;ll send a confirmation to{' '}
+                  <strong>{email.trim()}</strong> with your visit details and pass information.
                 </p>
                 <p className="sq-checkout__success-detail">
-                  Square returned a <strong>payment ID</strong> — your Django (or other) server should store it with
-                  this booking. Use it to verify the charge, issue passes or QR codes, and send receipts.
+                  Save the reference below for your records — you may be asked for it at check-in.
                 </p>
                 <ul className="sq-checkout__id-list">
                   <li>
-                    <span className="sq-checkout__id-label">Payment ID</span>
+                    <span className="sq-checkout__id-label">Confirmation #</span>
                     <code className="sq-checkout__id-value">{done.paymentId}</code>
                   </li>
                   <li>
-                    <span className="sq-checkout__id-label">Status</span>
+                    <span className="sq-checkout__id-label">Payment status</span>
                     <span className="sq-checkout__id-value sq-checkout__id-value--plain">{done.status}</span>
                   </li>
                   {done.bookingReference && (
                     <li>
-                      <span className="sq-checkout__id-label">Booking ref</span>
+                      <span className="sq-checkout__id-label">Booking reference</span>
                       <code className="sq-checkout__id-value">{done.bookingReference}</code>
                     </li>
                   )}
                 </ul>
-                <p className="sq-checkout__sandbox-note">
-                  Sandbox: use Square test cards. In production, replace keys and POST this payload to your API.
-                </p>
                 <button type="button" className="sq-checkout__primary-btn" onClick={onClose}>
                   Close
                 </button>
@@ -275,8 +271,7 @@ export default function SquareCheckoutModal({
                   Step 1 — Contact
                 </h3>
                 <p className="sq-checkout__section-hint">
-                 Your name and email are
-                  used for passes and confirmation only.
+                  Your name and email are used for passes and confirmation only.
                 </p>
                 <div className="sq-checkout__fields">
                   <label className="sq-checkout__label" htmlFor={`${baseId}-name`}>
