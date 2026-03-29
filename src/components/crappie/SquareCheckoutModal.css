@@ -374,6 +374,38 @@
   line-height: 1.5;
 }
 
+.sq-checkout__children-callout {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(196, 52, 47, 0.22);
+  background: rgba(196, 52, 47, 0.06);
+}
+
+.sq-checkout__children-callout-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sq-ink);
+}
+
+.sq-checkout__children-callout-text {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--sq-muted);
+}
+
+.sq-checkout__success-children {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--sq-muted);
+}
+
 .sq-checkout__step2-head {
   display: flex;
   align-items: flex-start;

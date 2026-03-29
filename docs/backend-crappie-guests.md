@@ -1,6 +1,6 @@
-# Backend: Crappie House payment + per-guest codes
+# Backend: Crappie House payment + adult guest codes
 
-The frontend sends **one row per pass holder** in `guests` (same length as `booking.people`). Your backend should create **one pass / QR / redemption code per guest** and email it to that guest’s `email`.
+The frontend sends **one row per adult** in `guests` (length **`booking.adults`**). Child day passes are priced the same but **no separate name/email** — `booking.children` counts them for totals and email disclaimers. Issue pass / confirmation **per adult row**; handle kids per your policy (e.g. covered on adult confirmation).
 
 ## `POST /api/square/payments` — relevant JSON
 
@@ -18,7 +18,7 @@ Top-level (along with `sourceId`, `amountCents`, `currency`, `note`, `referenceI
 }
 ```
 
-- **`guests`** — Source of truth for pass issuance (same order as UI: guest 1, guest 2, …).
+- **`guests`** — One entry per **adult** (same order as checkout: adult 1, adult 2, …). Length equals **`booking.adults`**.
 - **`customerName` / `customerEmail`** — Copy of **guest 1** (payer / primary) for Square receipts and backward compatibility.
 
 Embedded in **`booking`** (same `guests` array duplicated for convenience):
@@ -31,8 +31,8 @@ Embedded in **`booking`** (same `guests` array duplicated for convenience):
     "visitEnd": "2026-03-30",
     "dayCount": 3,
     "adults": 2,
-    "children": 0,
-    "people": 2,
+    "children": 1,
+    "people": 3,
     "dayPassCents": 1500,
     "totalCents": 9000,
     "guests": [
@@ -47,7 +47,7 @@ Embedded in **`booking`** (same `guests` array duplicated for convenience):
 
 **SendGrid:** After you change templates, **re-upload `email.html`** into the SendGrid dynamic template (or paste the updated HTML). Use **`children: 1`** (and codes) in `send_template_test_email` so test sends show the disclaimer.
 
-**Validation:** `len(booking.guests) === booking.people` and `booking.totalCents` matches `amountCents`.
+**Validation:** `len(booking.guests) === booking.adults`, `booking.people === booking.adults + booking.children`, and `booking.totalCents` matches `amountCents`.
 
 ## Suggested database shape (Django-style)
 
