@@ -8,15 +8,26 @@ function normalizePath(path) {
   return t;
 }
 
+/** Main resort marketing site: https://www.hilineresort.com */
+export const RESORT_SITE_ORIGIN = 'https://www.hilineresort.com';
+
+/** ResNexus booking — same as “Book” on the main site. */
+export const RESORT_BOOKING_URL =
+  'https://resnexus.com/resnexus/reservations/book/D4E8E8CE-3820-4F96-9C0F-9AEDC64A2A4E';
+
 export const DEFAULT_NAV_LINKS = [
-  { label: 'Home', href: '/' },
-  { label: 'About', href: '/about' },
-  { label: 'Accommodations', href: '/accommodations' },
-  { label: 'Good Times', href: '/good-times' },
-  { label: 'Fishing', href: '/fishing' },
-  { label: 'Contact', href: '/contact' },
-  { label: 'Book Now', href: '/#crappie-booking' },
+  { label: 'Home', href: `${RESORT_SITE_ORIGIN}/` },
+  { label: 'About', href: `${RESORT_SITE_ORIGIN}/about` },
+  { label: 'Accommodations', href: `${RESORT_SITE_ORIGIN}/accommodations` },
+  { label: 'Good Times', href: `${RESORT_SITE_ORIGIN}/good-times` },
+  { label: 'Fishing', href: `${RESORT_SITE_ORIGIN}/fishing` },
+  { label: 'Contact', href: `${RESORT_SITE_ORIGIN}/contact` },
+  { label: 'Book Now', href: RESORT_BOOKING_URL },
 ];
+
+function isExternalHref(href) {
+  return /^https?:\/\//i.test(href);
+}
 
 function PhoneIcon() {
   return (
@@ -55,7 +66,7 @@ export default function SiteHeader({
   navLinks = DEFAULT_NAV_LINKS,
   phoneDisplay = '325-379-1065',
   phoneTel = 'tel:+13253791065',
-  homeHref = '/',
+  homeHref = `${RESORT_SITE_ORIGIN}/`,
   className = '',
 }) {
   const [navOpen, setNavOpen] = useState(false);
@@ -103,7 +114,11 @@ export default function SiteHeader({
       role="banner"
     >
       <div className="site-header__inner">
-        <a className="site-header__brand" href={homeHref}>
+        <a
+          className="site-header__brand"
+          href={homeHref}
+          {...(isExternalHref(homeHref) ? { rel: 'noopener noreferrer' } : {})}
+        >
           <img
             className="site-header__logo"
             src={logoSrc}
@@ -129,14 +144,16 @@ export default function SiteHeader({
         <nav className="site-header__nav" id={`${navId}-menu`} aria-label="Main">
           <ul className="site-header__nav-list">
             {navLinks.map((item) => {
+              const external = isExternalHref(item.href);
               const pathNorm = normalizePath(pathname);
-              const hrefNorm = normalizePath(item.href);
-              const isCurrent = pathNorm === hrefNorm;
+              const hrefNorm = external ? '' : normalizePath(item.href);
+              const isCurrent = !external && pathNorm === hrefNorm;
               return (
                 <li key={item.label} className="site-header__nav-item">
                   <a
                     className={`site-header__nav-link${isCurrent ? ' site-header__nav-link--active' : ''}`}
                     href={item.href}
+                    {...(external ? { rel: 'noopener noreferrer' } : {})}
                     aria-current={isCurrent ? 'page' : undefined}
                     onClick={() => closeNav()}
                   >
