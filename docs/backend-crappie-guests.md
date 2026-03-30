@@ -14,12 +14,14 @@ Top-level (along with `sourceId`, `amountCents`, `currency`, `note`, `referenceI
   ],
   "customerName": "Jane Doe",
   "customerEmail": "jane@example.com",
-  "customerPhone": "+1..."
+  "customerPhone": "+1...",
+  "guestEmails": ["john@example.com"]
 }
 ```
 
 - **`guests`** — One entry per **adult** (same order as checkout: adult 1, adult 2, …). Length equals **`booking.adults`**. Each object may include optional **`phone`** (per adult). Top-level **`customerPhone`** is adult 1’s phone when provided (for Square receipts).
 - **`customerName` / `customerEmail`** — Copy of **guest 1** (payer / primary) for Square receipts and backward compatibility.
+- **`guestEmails`** (top-level, optional) — Same shape as inside **`booking`**: extra inboxes for confirmations. The app sends **both** top-level and **`booking.guestEmails`** (same list) so serializers that only whitelist payment-root fields still receive recipients. Server merges/dedupes with **`customerEmail`** (payer first, case-insensitive).
 
 Embedded in **`booking`** (same `guests` array duplicated for convenience):
 
@@ -48,9 +50,9 @@ Embedded in **`booking`** (same `guests` array duplicated for convenience):
 
 **SendGrid:** After you change templates, **re-upload `email.html`** into the SendGrid dynamic template (or paste the updated HTML). Use **`children: 1`** (and codes) in `send_template_test_email` so test sends show the disclaimer.
 
-**`booking.guestEmails` (optional array of strings):** Extra addresses that should receive the same confirmation as the payer (in addition to top-level **`customerEmail`**, which is adult 1). The frontend sends **`guestEmails`** as the emails of adults 2, 3, … **excluding** the payer’s address and **deduped** case-insensitively. Your backend may also accept **`guest_emails`** or a comma/semicolon-separated string — see your API serializer.
+**`guestEmails` in `booking` (optional array of strings):** Same list as top-level when present — extra addresses for the same confirmation email. Adults 2+ emails, **excluding** the payer, **deduped** case-insensitively on the client. Your backend may also merge **`guest_emails`**, **`additionalEmails`**, **`ccEmails`**, **`emails`**, **`users`**, etc. — see your API.
 
-**Why:** Square and the top-level payload only expose **`customerEmail`** for the paying contact. Without **`guestEmails`**, only one inbox would get the message even when multiple adults each have an email in **`booking.guests`**.
+**Why:** The payer is only **`customerEmail`**. Without **`guestEmails`** (top-level and/or in **`booking`**), only one inbox gets mail. DRF may only expose **`guestEmails`** on the payment serializer at the **root** — sending it **both** places keeps serializers and `collect_booking_confirmation_recipients` aligned.
 
 **Validation:** `len(booking.guests) === booking.adults`, `booking.people === booking.adults + booking.children`, and `booking.totalCents` matches `amountCents`.
 

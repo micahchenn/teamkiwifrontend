@@ -207,6 +207,8 @@ export default function SquareCheckoutModal({
             customerName: primary.fullName,
             customerEmail: primary.email,
             customerPhone: primaryPhone || undefined,
+            // Top-level + booking: DRF reads both; same list merged/deduped on server.
+            ...(guestEmailsExtra.length > 0 ? { guestEmails: guestEmailsExtra } : {}),
             booking: bookingPayload,
           }),
         });
