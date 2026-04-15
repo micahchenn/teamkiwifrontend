@@ -89,3 +89,44 @@ Generate unique codes (e.g. `secrets.token_urlsafe`, or UUID) **after** payment 
 - Use `reference_id` + `square_payment_id` to avoid double-processing webhooks or retries.
 
 This repo does **not** run migrations; implement the above in **teamkiwibackend** (or your API repo).
+
+## Admin bulk code sender endpoint
+
+The frontend route `"/admin/codes"` expects this backend endpoint:
+
+- `POST /api/admin/codes/send`
+
+Example request:
+
+```json
+{
+  "adminPassword": "your-admin-password",
+  "codeType": "crappie_house_guest_access",
+  "recipients": [
+    { "email": "guest1@example.com", "startDate": "2026-04-20", "endDate": "2026-04-22" },
+    { "email": "guest2@example.com", "startDate": "2026-04-20", "endDate": "2026-04-20" }
+  ]
+}
+```
+
+Expected backend behavior:
+
+1. Validate `adminPassword` against server-side secret.
+2. For each recipient row, generate a random one-time code.
+3. Store the code and date validity window in your DB.
+4. Email that code to the row email.
+5. Return a per-row send summary.
+
+Suggested response shape:
+
+```json
+{
+  "sentCount": 2,
+  "failedCount": 0,
+  "sent": [
+    { "email": "guest1@example.com", "code": "HLC-9Q2M7A" },
+    { "email": "guest2@example.com", "code": "HLC-4TZ8KJ" }
+  ],
+  "failed": []
+}
+```
