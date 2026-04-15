@@ -7,7 +7,7 @@ const apiBase = (
   'http://127.0.0.1:8000'
 ).replace(/\/$/, '');
 
-const adminGatePassword = process.env.REACT_APP_ADMIN_CODES_PASSWORD || '';
+const adminGatePassword = 'barber';
 
 function createRecipientRow() {
   return { email: '', startDate: '', endDate: '' };
